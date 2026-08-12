@@ -1,4 +1,5 @@
 node_modules/
 .npm/
+.serverless/
 coverage/
 .DS_Store

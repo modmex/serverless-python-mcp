@@ -1,0 +1,35 @@
+service: python-mcp-function-url-buffered
+
+frameworkVersion: '4'
+
+plugins:
+ - serverless-python-mcp
+
+provider:
+  name: aws
+  runtime: python3.12
+
+custom:
+  pythonMcp:
+    servers:
+      example:
+        handler: app.handler
+        transport: url
+        streaming: false
+  pythonRequirements:
+    slim: true
+    usePoetry: true
+    requirePoetryLockFile: true
+    dockerizePip: true
+    useStaticCache: false
+    useDownloadCache: false
+    noDeploy:
+      - boto3
+      - botocore
+      - s3transfer
+      - jmespath
+      - python-dateutil
+      - dateutil
+      - six
+      - urllib3
+      - bin

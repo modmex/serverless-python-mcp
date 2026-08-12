@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "devDependencies": {
+    "serverless": "^4.0.0",
+    "serverless-python-requirements": "^6.1.2",
+    "serverless-python-mcp": "0.1.0"
+  }
+}
