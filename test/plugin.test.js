@@ -49,6 +49,25 @@ test('synthesizes a buffered HTTP API without the Web Adapter', async () => {
   assert.equal(fn.environment.AWS_LWA_PORT, undefined);
 });
 
+test('supports a per-server timeout while preserving provider defaults otherwise', async () => {
+  const { plugin, serverless } = createPlugin({
+    custom: { pythonMcp: { servers: { slow: {
+      handler: 'app.handler', transport: 'httpApi', streaming: false, timeout: 120,
+    } } } },
+  });
+  await plugin.initialize();
+  assert.equal(serverless.service.functions.slow.timeout, 120);
+});
+
+test('rejects an invalid per-server timeout', async () => {
+  const { plugin } = createPlugin({
+    custom: { pythonMcp: { servers: { invalid: {
+      handler: 'app.handler', transport: 'httpApi', streaming: false, timeout: 901,
+    } } } },
+  });
+  await assert.rejects(() => plugin.initialize(), /between 1 and 900/);
+});
+
 test('rejects duplicate paths on the same API transport', async () => {
   const { plugin } = createPlugin({
     custom: { pythonMcp: { servers: {
@@ -90,4 +109,22 @@ test('selects the arm64 Lambda Web Adapter layer', async () => {
   });
   await plugin.initialize();
   assert.deepEqual(serverless.service.functions.arm.layers, [{ 'Fn::Sub': 'arn:aws:lambda:${AWS::Region}:753240598075:layer:LambdaAdapterLayerArm64:28' }]);
+});
+
+test('synthesizes REST API streaming with the adapter entrypoint', async () => {
+  const { plugin, serverless } = createPlugin({
+    custom: { pythonMcp: { servers: { stream: {
+      handler: 'src.orders.handler', transport: 'http', streaming: true,
+      package: { patterns: ['src/orders/**'] },
+    } } } },
+  });
+  await plugin.initialize();
+  const fn = serverless.service.functions.stream;
+  assert.equal(fn.handler, 'serverless-mcp/run.sh');
+  assert.equal(fn.url, undefined);
+  assert.equal(fn.events[0].http.response.transferMode, 'STREAM');
+  assert.equal(fn.environment.MCP_HANDLER_MODULE, 'src.orders');
+  assert.equal(fn.environment.MCP_HANDLER_ATTRIBUTE, 'handler');
+  assert.deepEqual(fn.package.patterns, ['serverless-mcp/**', 'src/orders/**']);
+  assert.deepEqual(fn.layers, [{ 'Fn::Sub': 'arn:aws:lambda:${AWS::Region}:753240598075:layer:LambdaAdapterLayerX86:28' }]);
 });
