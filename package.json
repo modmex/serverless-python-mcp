@@ -1,0 +1,40 @@
+{
+  "name": "serverless-python-mcp",
+  "version": "0.1.0",
+  "description": "Serverless Framework plugin for deploying Python MCP servers on AWS Lambda.",
+  "main": "index.js",
+  "type": "commonjs",
+  "files": [
+    "index.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "serverless",
+    "serverless-plugin",
+    "mcp",
+    "model-context-protocol",
+    "aws-lambda",
+    "python"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test",
+    "lint": "node --check index.js",
+    "prepublishOnly": "npm test && npm run lint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/modmex/serverless-python-mcp.git"
+  },
+  "license": "MIT",
+  "author": "modmex",
+  "peerDependencies": {
+    "serverless": ">=3"
+  },
+  "devDependencies": {
+    "serverless": "^4.41.0"
+  }
+}
