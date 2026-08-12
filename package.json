@@ -1,6 +1,6 @@
 {
   "name": "serverless-python-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Serverless Framework plugin for deploying Python MCP servers on AWS Lambda.",
   "main": "index.js",
   "type": "commonjs",

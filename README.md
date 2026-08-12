@@ -108,7 +108,7 @@ to `http`, `httpApi`, and `url` respectively.
 
 ### `streaming`
 
-`streaming` defaults to `true`. It controls how the configured handler is
+`streaming` defaults to `false`. It controls how the configured handler is
 executed:
 
 #### Streaming: `streaming: true`
@@ -174,6 +174,25 @@ app.include_mcp(mcp, path="/orders/mcp")
 Paths must be unique among servers sharing the same `http` or `httpApi`
 transport. Different Function URLs may reuse `/mcp` because each function has
 its own hostname.
+
+### `timeout`
+
+The provider-level `timeout` remains the default for generated MCP functions.
+Set `timeout` on an individual server when it needs a different Lambda
+timeout:
+
+```yaml
+custom:
+  pythonMcp:
+    servers:
+      reports:
+        handler: app.handler
+        transport: url
+        streaming: true
+        timeout: 900
+```
+
+The value must be an integer from 1 to 900 seconds.
 
 ### `architecture`
 

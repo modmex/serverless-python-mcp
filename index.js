@@ -41,7 +41,7 @@ class ServerlessPythonMcpPlugin {
 
     this.serverless.service.functions ||= {};
     if (
-      Object.values(servers).some((definition) => normalizeTransport(definition?.transport) !== 'url')
+      Object.values(servers).some((definition) => normalizeTransport(definition?.transport, definition?.streaming) !== 'url')
       && !this.serverless.service.provider.apiName
     ) {
       this.serverless.service.provider.apiName = `${this.serverless.service.service}-${this.provider.getStage()}-mcp`;
@@ -67,8 +67,8 @@ class ServerlessPythonMcpPlugin {
       throw new Error(`MCP server '${name}' requires handler, e.g. app.handler`);
     }
 
-    const transport = normalizeTransport(definition.transport);
-    const streaming = definition.streaming !== false;
+    const transport = normalizeTransport(definition.transport, definition.streaming);
+    const streaming = definition.streaming === true;
     const path = normalizePath(definition.path, name);
     if (transport === 'url') {
       normalizeUrlAuthorizer(definition.authorizer);
@@ -103,6 +103,7 @@ class ServerlessPythonMcpPlugin {
       name: `${this.serverless.service.service}-${this.provider.getStage()}-mcp-${functionName}`,
       handler: streamingHandler(definition, streaming),
       architecture,
+      ...(definition.timeout !== undefined ? { timeout: normalizeTimeout(definition.timeout, name) } : {}),
       environment: {
         ...(definition.environment || {}),
         MCP_APPLICATION: application,
@@ -113,7 +114,8 @@ class ServerlessPythonMcpPlugin {
         PYTHONUNBUFFERED: '1',
       },
       package: {
-        patterns: [application.split('.')[0] + '.py', 'server.py', 'serverless-mcp/**', ...(definition.package?.patterns || [])],
+        individually: true,
+        patterns: ['serverless-mcp/**', ...(definition.package?.patterns || [])],
       },
       events: [],
     };
@@ -206,7 +208,7 @@ class ServerlessPythonMcpPlugin {
   validatePathCollisions(servers) {
     const pathsByTransport = new Map();
     for (const [name, definition] of Object.entries(servers)) {
-      const transport = normalizeTransport(definition?.transport);
+      const transport = normalizeTransport(definition?.transport, definition?.streaming);
       if (transport === 'url') continue;
       const path = normalizePath(definition?.path, name);
       const key = `${transport}:${path}`;
@@ -225,6 +227,7 @@ class ServerlessPythonMcpPlugin {
     const config = this.serverless.configurationInput?.custom?.pythonMcp
       || this.serverless.service.custom?.pythonMcp;
     if (!config?.servers) return;
+    if (!Object.values(config.servers).some((definition) => definition?.streaming === true)) return;
     const directory = path.join(this.serverless.serviceDir, 'serverless-mcp');
     fs.mkdirSync(directory, { recursive: true });
     const launcher = path.join(directory, 'run.sh');
@@ -288,8 +291,17 @@ function normalizeUrlAuthorizer(authorizer) {
   );
 }
 
-function normalizeTransport(transport) {
-  const value = transport || 'httpApi';
+function normalizeTimeout(timeout, name) {
+  if (!Number.isInteger(timeout) || timeout < 1 || timeout > 900) {
+    throw new Error(
+      `MCP server '${name}' timeout must be an integer between 1 and 900 seconds`,
+    );
+  }
+  return timeout;
+}
+
+function normalizeTransport(transport, streaming) {
+  const value = transport || (streaming === true ? 'http' : 'httpApi');
   const aliases = {
     httpApi: 'httpApi',
     'http-api': 'httpApi',
